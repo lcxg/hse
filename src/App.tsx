@@ -30,7 +30,8 @@ import {
   Send,
   Shield,
   Wrench,
-  Leaf
+  Leaf,
+  History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -709,8 +710,111 @@ const TrainingPromptModal = ({
   );
 };
 
+const VersionHistoryModal = ({ 
+  isOpen, 
+  onClose, 
+  sop 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  sop?: SOP 
+}) => {
+  if (!isOpen || !sop) return null;
+
+  const history = [
+    { version: 'V1.1', status: '已发起', scope: '四复合喂胶岗, 成型主机岗', headcount: 45, date: '2024-02-10' },
+    { version: 'V1.0', status: '已完成', scope: '四复合喂胶岗', headcount: 20, date: '2023-11-05' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200"
+      >
+        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-slate-900/20">
+              <History size={24} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">SOP 版本历史</h3>
+              <p className="text-sm text-slate-500 font-medium">{sop.name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-slate-50 rounded-full transition-colors text-slate-400 hover:text-slate-900">
+            <Plus size={28} className="rotate-45" />
+          </button>
+        </div>
+
+        <div className="p-10">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">版本</th>
+                  <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">培训状态</th>
+                  <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">影响范围</th>
+                  <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-center">受训人数</th>
+                  <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">日期</th>
+                  <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {history.map((h) => (
+                  <tr key={h.version} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-5">
+                      <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-xs font-black tracking-wider">
+                        {h.version}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className={cn(
+                        "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold",
+                        h.status === '已发起' ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"
+                      )}>
+                        <div className={cn("w-1.5 h-1.5 rounded-full", h.status === '已发起' ? "bg-blue-500" : "bg-emerald-500")} />
+                        {h.status}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs">{h.scope}</p>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <span className="text-sm font-black text-slate-900">{h.headcount}</span>
+                    </td>
+                    <td className="px-6 py-5 text-sm text-slate-500 font-medium">
+                      {h.date}
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <button className="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-900 hover:text-white transition-all">
+                        查看
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="px-10 py-8 bg-slate-50 border-t border-slate-100 flex justify-end">
+          <button 
+            onClick={onClose}
+            className="px-8 py-3 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
+          >
+            关闭历史
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const SOPManagement = () => {
   const [upgradingSop, setUpgradingSop] = useState<SOP | undefined>(undefined);
+  const [viewingHistorySop, setViewingHistorySop] = useState<SOP | undefined>(undefined);
   const [affectedStations, setAffectedStations] = useState<string[]>([]);
   const [showTrainingPrompt, setShowTrainingPrompt] = useState(false);
 
@@ -801,13 +905,22 @@ const SOPManagement = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => setUpgradingSop(item)}
-                        className="flex items-center gap-1.5 ml-auto px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all"
-                      >
-                        <ArrowUpCircle size={14} />
-                        <span>版本升级</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => setUpgradingSop(item)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all"
+                        >
+                          <ArrowUpCircle size={14} />
+                          <span>版本升级</span>
+                        </button>
+                        <button 
+                          onClick={() => setViewingHistorySop(item)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+                        >
+                          <History size={14} />
+                          <span>版本历史</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -845,6 +958,12 @@ const SOPManagement = () => {
         affectedStations={affectedStations}
         personCount={20}
         onClose={() => setShowTrainingPrompt(false)}
+      />
+
+      <VersionHistoryModal 
+        isOpen={!!viewingHistorySop}
+        sop={viewingHistorySop}
+        onClose={() => setViewingHistorySop(undefined)}
       />
     </div>
   );
