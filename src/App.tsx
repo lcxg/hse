@@ -27,7 +27,10 @@ import {
   Bell,
   ShieldAlert,
   CalendarClock,
-  Send
+  Send,
+  Shield,
+  Wrench,
+  Leaf
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -39,7 +42,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
-type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning';
+type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal';
 
 const FACTORY_WORKSHOPS: Record<string, string[]> = {
   '兖州工厂': ['一期半成品车间', '密炼车间', '成型车间'],
@@ -127,6 +130,67 @@ interface WarningRecord {
 
 // --- Components ---
 
+const PortalDashboard = ({ onSelectSOP }: { onSelectSOP: () => void }) => {
+  const cards = [
+    { title: "HSE Safety Management", icon: Shield, color: "bg-rose-500" },
+    { title: "Equipment Lifecycle", icon: Wrench, color: "bg-blue-500" },
+    { title: "Environmental Monitoring", icon: Leaf, color: "bg-emerald-500" },
+    { title: "SOP Management", icon: GraduationCap, color: "bg-amber-500", action: onSelectSOP },
+  ];
+
+  return (
+    <div className="flex-1 bg-white flex flex-col h-screen overflow-hidden">
+      <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+            <LayoutDashboard size={24} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">应用门户</h2>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm font-bold text-gray-900">Welcome, Administrator</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest">Enterprise SaaS Dashboard</p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 border-2 border-white shadow-sm" />
+        </div>
+      </header>
+
+      <main className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-50/30 overflow-auto">
+        <div className="max-w-4xl w-full space-y-12 py-12">
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">Choose Your Application</h1>
+            <p className="text-gray-500">Select a module to begin managing your industrial operations</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {cards.map((card, idx) => (
+              <motion.button
+                key={idx}
+                whileHover={{ y: -8, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={card.action}
+                className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200/50 transition-all text-left flex flex-col gap-6 group"
+              >
+                <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg", card.color)}>
+                  <card.icon size={32} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">{card.title}</h3>
+                  <p className="text-sm text-gray-500">Click to launch the {card.title} module and access all its features.</p>
+                </div>
+                <div className="mt-auto pt-4 flex items-center gap-2 text-xs font-bold text-emerald-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                  Launch Module <ChevronRight size={14} />
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
 const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiveMenu: (m: MenuType) => void }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
@@ -148,13 +212,28 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
         <h1 className="font-bold text-lg tracking-tight">工业管理系统</h1>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
+        <button
+          onClick={() => setActiveMenu('portal')}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-2",
+            activeMenu === 'portal' 
+              ? "bg-emerald-500/10 text-emerald-400" 
+              : "text-gray-400 hover:bg-white/5 hover:text-white"
+          )}
+        >
+          <LayoutDashboard size={20} className={cn(
+            activeMenu === 'portal' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
+          )} />
+          <span className="font-bold text-xs uppercase tracking-widest">应用门户</span>
+        </button>
+
         <div className="space-y-1">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group"
           >
             <LayoutDashboard size={20} className="text-gray-500 group-hover:text-white" />
-            <span className="font-bold text-xs uppercase tracking-widest">菜单一</span>
+            <span className="font-bold text-xs uppercase tracking-widest">SOP管理</span>
             <div className="ml-auto">
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </div>
@@ -1735,6 +1814,7 @@ export default function App() {
           {activeMenu === 'employee' && <EmployeeDetails />}
           {activeMenu === 'talent' && <TalentDistribution />}
           {activeMenu === 'warning' && <WarningCenter />}
+          {activeMenu === 'portal' && <PortalDashboard onSelectSOP={() => setActiveMenu('sop')} />}
         </motion.div>
       </AnimatePresence>
     </div>
