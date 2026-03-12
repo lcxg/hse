@@ -31,7 +31,13 @@ import {
   Shield,
   Wrench,
   Leaf,
-  History
+  History,
+  Calendar,
+  List,
+  Inbox,
+  Filter,
+  BarChart3,
+  Circle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -43,7 +49,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
-type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal';
+type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task';
 
 const FACTORY_WORKSHOPS: Record<string, string[]> = {
   '兖州工厂': ['一期半成品车间', '密炼车间', '成型车间'],
@@ -216,7 +222,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
         <button
           onClick={() => setActiveMenu('portal')}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-2",
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
             activeMenu === 'portal' 
               ? "bg-emerald-500/10 text-emerald-400" 
               : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -226,6 +232,21 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
             activeMenu === 'portal' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
           )} />
           <span className="font-bold text-xs uppercase tracking-widest">应用门户</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMenu('task')}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-2",
+            activeMenu === 'task' 
+              ? "bg-emerald-500/10 text-emerald-400" 
+              : "text-gray-400 hover:bg-white/5 hover:text-white"
+          )}
+        >
+          <ClipboardCheck size={20} className={cn(
+            activeMenu === 'task' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
+          )} />
+          <span className="font-bold text-xs uppercase tracking-widest">任务中台</span>
         </button>
 
         <div className="space-y-1">
@@ -1911,6 +1932,247 @@ const WarningCenter = () => {
   );
 };
 
+// --- Menu 7: Task Center ---
+
+const TaskCenter = () => {
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [selectedType, setSelectedType] = useState('all');
+  
+  const stats = [
+    { label: '本月计划总数', value: 128, icon: ClipboardCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: '待处理触发任务', value: 12, icon: Bell, color: 'text-rose-600', bg: 'bg-rose-50', hasDot: true },
+    { label: '进行中人数', value: 456, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: '本月合格率', value: '94.2%', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ];
+
+  const planTypes = [
+    { id: 'all', label: '全部类型', color: 'bg-gray-500' },
+    { id: 'annual', label: '年度计划', color: 'bg-indigo-500' },
+    { id: 'level3', label: '三级培训', color: 'bg-emerald-500' },
+    { id: 'sop', label: 'SOP 培训', color: 'bg-amber-500' },
+    { id: 'review', label: '复审培训', color: 'bg-rose-500' },
+    { id: 'transfer', label: '转岗培训', color: 'bg-blue-500' },
+    { id: 'new', label: '四新培训', color: 'bg-red-500' },
+  ];
+
+  const listData = [
+    { name: '2024年度安全生产全员培训', source: '手动', progress: 85, passRate: '92%', status: '进行中', type: 'annual' },
+    { name: '四复合岗位 SOP 变更专项培训', source: '自动', progress: 100, passRate: '100%', status: '已完成', type: 'sop' },
+    { name: '成型车间 Q1 技能复审', source: '自动', progress: 45, passRate: '88%', status: '进行中', type: 'review' },
+    { name: '新员工入职三级教育 - 3月批次', source: '手动', progress: 12, passRate: '-', status: '未开始', type: 'level3' },
+  ];
+
+  const triggerInbox = [
+    { id: 1, title: 'SOP 更新触发：四复合喂胶标准', type: 'SOP 更新', time: '2小时前', desc: '检测到 V2.1 版本发布，涉及 24 人需重新培训。' },
+    { id: 2, title: '证书过期触发：成型主机岗', type: '证书过期', time: '5小时前', desc: '张建国等 3 人证书将于 15 天内过期。' },
+    { id: 3, title: 'SOP 更新触发：紧急停机流程', type: 'SOP 更新', time: '昨天', desc: '全厂通用 SOP 更新，涉及 150 人。' },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#F8F9FA]">
+      {/* Top: Statistics Bar */}
+      <header className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">任务中台</h2>
+          <div className="flex items-center gap-3">
+            <div className="flex bg-gray-100 p-1 rounded-xl">
+              <button 
+                onClick={() => setViewMode('calendar')}
+                className={cn("px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2", viewMode === 'calendar' ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+              >
+                <Calendar size={14} /> 日历视图
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={cn("px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2", viewMode === 'list' ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+              >
+                <List size={14} /> 列表视图
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-6">
+          {stats.map((stat, idx) => (
+            <div key={idx} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 relative">
+              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", stat.bg, stat.color)}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-2xl font-black text-gray-900">{stat.value}</p>
+              </div>
+              {stat.hasDot && (
+                <div className="absolute top-4 right-4 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+              )}
+            </div>
+          ))}
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: Month & Type Picker */}
+        <aside className="w-72 bg-white border-r border-gray-200 p-6 flex flex-col gap-8 overflow-auto">
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">时间选择</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <select className="bg-gray-50 border-none rounded-xl px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-emerald-500/20">
+                <option>2024年</option>
+                <option>2023年</option>
+              </select>
+              <select className="bg-gray-50 border-none rounded-xl px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-emerald-500/20">
+                <option>3月</option>
+                <option>4月</option>
+                <option>5月</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">计划类型</h3>
+            <div className="space-y-1">
+              {planTypes.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedType(type.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group",
+                    selectedType === type.id ? "bg-gray-900 text-white shadow-lg" : "text-gray-600 hover:bg-gray-50"
+                  )}
+                >
+                  <div className={cn("w-2 h-2 rounded-full", type.color)} />
+                  <span className="text-sm font-medium">{type.label}</span>
+                  {selectedType === type.id && <ChevronRight size={14} className="ml-auto opacity-50" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-auto pt-6 border-t border-gray-100">
+            <button className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
+              <Plus size={18} /> 新建培训计划
+            </button>
+          </div>
+        </aside>
+
+        {/* Middle: Main View */}
+        <main className="flex-1 overflow-auto p-8">
+          {viewMode === 'calendar' ? (
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full">
+              <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50/50">
+                {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map(day => (
+                  <div key={day} className="py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</div>
+                ))}
+              </div>
+              <div className="flex-1 grid grid-cols-7 grid-rows-5">
+                {Array.from({ length: 35 }).map((_, i) => {
+                  const day = i - 3; // Offset for March 2024
+                  const isCurrentMonth = day > 0 && day <= 31;
+                  return (
+                    <div key={i} className={cn("border-r border-b border-gray-50 p-2 min-h-[100px] transition-colors hover:bg-gray-50/50", !isCurrentMonth && "bg-gray-50/30 opacity-30")}>
+                      <span className="text-xs font-bold text-gray-400">{isCurrentMonth ? day : ''}</span>
+                      {day === 5 && (
+                        <div className="mt-1 p-1.5 bg-indigo-500 text-white text-[10px] font-bold rounded-lg shadow-sm">年度安全培训</div>
+                      )}
+                      {day === 12 && (
+                        <div className="mt-1 p-1.5 bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow-sm">新员工三级教育</div>
+                      )}
+                      {day === 15 && (
+                        <div className="mt-1 p-1.5 bg-amber-500 text-white text-[10px] font-bold rounded-lg shadow-sm">SOP 专项培训</div>
+                      )}
+                      {day === 22 && (
+                        <div className="mt-1 p-1.5 bg-rose-500 text-white text-[10px] font-bold rounded-lg shadow-sm">复审考核</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50 border-b border-gray-200">
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">计划名称</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">来源</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">进度</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">及格率</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">状态</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {listData.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("w-2 h-2 rounded-full", planTypes.find(t => t.id === item.type)?.color)} />
+                          <span className="font-bold text-gray-900">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className={cn("px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider", item.source === '自动' ? "bg-purple-50 text-purple-600" : "bg-blue-50 text-blue-600")}>
+                          {item.source}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${item.progress}%` }} className="h-full bg-emerald-500" />
+                          </div>
+                          <span className="text-xs font-bold text-gray-600">{item.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-center font-bold text-gray-900">{item.passRate}</td>
+                      <td className="px-6 py-5 text-right">
+                        <span className={cn("text-xs font-bold", item.status === '已完成' ? "text-emerald-500" : item.status === '进行中' ? "text-blue-500" : "text-gray-400")}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </main>
+
+        {/* Right: Trigger Inbox */}
+        <aside className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
+            <div className="flex items-center gap-2">
+              <Inbox size={18} className="text-rose-500" />
+              <h3 className="text-sm font-bold text-gray-900">触发任务收件箱</h3>
+            </div>
+            <span className="w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-rose-500/20">
+              {triggerInbox.length}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-4 space-y-4">
+            {triggerInbox.map((item) => (
+              <div key={item.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all space-y-3 group cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-lg uppercase tracking-wider">{item.type}</span>
+                  <span className="text-[10px] text-gray-400 font-medium">{item.time}</span>
+                </div>
+                <h4 className="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors leading-tight">{item.title}</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
+                <button className="w-full py-2 bg-gray-50 text-gray-600 text-[10px] font-bold rounded-xl hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center gap-2">
+                  <ArrowRightLeft size={12} /> 一键转为计划
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 bg-gray-50/50 border-t border-gray-100">
+            <p className="text-[10px] text-gray-400 text-center font-medium leading-relaxed">
+              系统自动检索 SOP 更新与证书过期情况<br />并实时推送到此收件箱
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+};
+
 // --- Main App ---
 export default function App() {
   const [activeMenu, setActiveMenu] = useState<MenuType>('equipment');
@@ -1933,6 +2195,7 @@ export default function App() {
           {activeMenu === 'employee' && <EmployeeDetails />}
           {activeMenu === 'talent' && <TalentDistribution />}
           {activeMenu === 'warning' && <WarningCenter />}
+          {activeMenu === 'task' && <TaskCenter />}
           {activeMenu === 'portal' && <PortalDashboard onSelectSOP={() => setActiveMenu('sop')} />}
         </motion.div>
       </AnimatePresence>
