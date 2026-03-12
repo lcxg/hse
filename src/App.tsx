@@ -37,7 +37,9 @@ import {
   Inbox,
   Filter,
   BarChart3,
-  Circle
+  Circle,
+  Sparkles,
+  Wand2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -49,7 +51,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
-type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task';
+type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task' | 'task-detail';
 
 const FACTORY_WORKSHOPS: Record<string, string[]> = {
   '兖州工厂': ['一期半成品车间', '密炼车间', '成型车间'],
@@ -1934,7 +1936,7 @@ const WarningCenter = () => {
 
 // --- Menu 7: Task Center ---
 
-const TaskCenter = () => {
+const TaskCenter = ({ onAddPlan }: { onAddPlan?: () => void }) => {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [selectedType, setSelectedType] = useState('all');
   
@@ -2049,7 +2051,10 @@ const TaskCenter = () => {
           </div>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
-            <button className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
+            <button 
+              onClick={() => onAddPlan?.()}
+              className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+            >
               <Plus size={18} /> 新建培训计划
             </button>
           </div>
@@ -2173,6 +2178,249 @@ const TaskCenter = () => {
   );
 };
 
+// --- Menu 8: Training Plan Detail ---
+
+const TrainingPlanDetail = ({ onBack }: { onBack: () => void }) => {
+  const [trainingType, setTrainingType] = useState('annual');
+  const [selectedStation, setSelectedStation] = useState('');
+  const [personnelScope, setPersonnelScope] = useState('all'); // all, dept, factory
+  
+  // Scenario B logic: Auto-trigger for '成型主机岗'
+  const isSOPType = trainingType === 'sop';
+  const isAutoMode = isSOPType && selectedStation === '成型主机岗';
+
+  const mockSOPs = ['安全生产总则', '成型机标准操作规程'];
+  const mockExams = ['成型主机岗理论考试 A 卷', '成型主机岗实操考核表'];
+  const mockTrainees = ['张三', '李四', '王五', '赵六', '钱七'];
+
+  return (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-white">
+      {/* Header */}
+      <header className="px-8 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+          >
+            <ChevronRight className="rotate-180" size={20} />
+          </button>
+          <h2 className="text-xl font-bold text-gray-900">新增培训计划</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="px-6 py-2 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition-all">取消</button>
+          <button className="px-8 py-2 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all">提交计划</button>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-auto p-8 max-w-5xl mx-auto w-full">
+        <div className="space-y-8 pb-20">
+          {/* Top: Training Type Dropdown */}
+          <section className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+            <div className="max-w-md">
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
+                培训类型 <span className="text-rose-500">*</span>
+              </label>
+              <select 
+                value={trainingType}
+                onChange={(e) => setTrainingType(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
+              >
+                <option value="annual">通用/年度培训</option>
+                <option value="sop">SOP/岗位专项</option>
+                <option value="level3">三级教育</option>
+                <option value="review">复审培训</option>
+              </select>
+            </div>
+          </section>
+
+          {trainingType === 'annual' ? (
+            /* Scenario A: Universal/Annual Training */
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">培训主题</label>
+                    <input 
+                      type="text" 
+                      defaultValue="2026年春节安全消防培训"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">培训内容</label>
+                    <div className="border-2 border-dashed border-gray-200 rounded-3xl p-8 text-center hover:border-emerald-500 transition-all cursor-pointer group">
+                      <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-all">
+                        <Plus size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-gray-900">点击上传附件</p>
+                      <p className="text-xs text-gray-400 mt-1">支持 PDF, PPT, MP4 等格式</p>
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <button className="text-xs font-bold text-emerald-500 hover:underline">从公共课件库勾选</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">选择试卷</label>
+                    <div className="border-2 border-dashed border-gray-200 rounded-3xl p-8 text-center hover:border-blue-500 transition-all cursor-pointer group bg-white">
+                      <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
+                        <ClipboardCheck size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-gray-900">点击选择或生成试卷</p>
+                      <p className="text-xs text-gray-400 mt-1">支持从库里选择或立即生成</p>
+                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center gap-4">
+                        <button className="text-xs font-bold text-blue-500 hover:underline flex items-center gap-1">
+                          从库勾选
+                        </button>
+                        <div className="w-1 h-1 bg-gray-200 rounded-full" />
+                        <button className="text-xs font-bold text-blue-500 hover:underline flex items-center gap-1">
+                          自定义生成
+                        </button>
+                        <div className="w-1 h-1 bg-gray-200 rounded-full" />
+                        <button className="text-xs font-bold text-indigo-500 hover:underline flex items-center gap-1">
+                          <Sparkles size={12} />  一键生成
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <label className="text-sm font-bold text-gray-700">人员选择</label>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setPersonnelScope('all')}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", personnelScope === 'all' ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
+                      >
+                        全员
+                      </button>
+                      <button 
+                        onClick={() => setPersonnelScope('dept')}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", personnelScope === 'dept' ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
+                      >
+                        按部门勾选
+                      </button>
+                      <button 
+                        onClick={() => setPersonnelScope('factory')}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", personnelScope === 'factory' ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
+                      >
+                        按工厂勾选
+                      </button>
+                    </div>
+                    <div className="bg-gray-50 rounded-2xl p-4 min-h-[160px] border border-gray-100 flex items-center justify-center">
+                      <p className="text-sm font-bold text-gray-400">
+                        {personnelScope === 'all' ? "已选择：全厂人员 (1250人)" : "请点击上方按钮进行具体勾选"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            /* Scenario B: SOP/Station Specific */
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="max-w-md">
+                <label className="block text-sm font-bold text-gray-700 mb-2">关联作业岗位</label>
+                <select 
+                  value={selectedStation}
+                  onChange={(e) => setSelectedStation(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
+                >
+                  <option value="">请选择岗位...</option>
+                  <option value="成型主机岗">成型主机岗</option>
+                  <option value="四复合喂胶岗">四复合喂胶岗</option>
+                  <option value="硫化操作岗">硫化操作岗</option>
+                </select>
+              </div>
+
+              {selectedStation === '成型主机岗' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100 space-y-4">
+                      <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                        <BookOpen size={14} /> 关联 SOP (只读)
+                      </h4>
+                      <ul className="space-y-2">
+                        {mockSOPs.map(sop => (
+                          <li key={sop} className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-white px-4 py-2 rounded-xl border border-emerald-100/50">
+                            <FileText size={14} className="text-emerald-500" /> {sop}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4">
+                      <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                        <ClipboardCheck size={14} /> 关联试卷 (只读)
+                      </h4>
+                      <ul className="space-y-2">
+                        {mockExams.map(exam => (
+                          <li key={exam} className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-white px-4 py-2 rounded-xl border border-blue-100/50">
+                            <FileText size={14} className="text-blue-500" /> {exam}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-sm font-bold text-gray-700">培训人员 (穿梭框自动勾选)</label>
+                    <div className="border border-gray-200 rounded-3xl overflow-hidden flex h-[320px]">
+                      <div className="flex-1 flex flex-col">
+                        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-widest">待选人员</div>
+                        <div className="flex-1 overflow-auto p-2 space-y-1">
+                          {['赵铁柱', '王大锤', '李二狗'].map(name => (
+                            <div key={name} className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 rounded-lg">{name}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="w-12 border-x border-gray-200 flex flex-col items-center justify-center gap-4 bg-gray-50/50">
+                        <button className="p-1 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-emerald-500 transition-colors"><ChevronRight size={16} /></button>
+                        <button className="p-1 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-emerald-500 transition-colors"><ChevronRight size={16} className="rotate-180" /></button>
+                      </div>
+                      <div className="flex-1 flex flex-col bg-emerald-50/20">
+                        <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">已选人员 (自动)</div>
+                        <div className="flex-1 overflow-auto p-2 space-y-1">
+                          {mockTrainees.map(name => (
+                            <div key={name} className="px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-emerald-100 rounded-lg shadow-sm">{name}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Common: Bottom Settings */}
+          <section className="pt-8 border-t border-gray-100">
+            <div className="max-w-md space-y-6">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <ClipboardCheck size={18} className="text-emerald-500" /> 考试设置
+              </h3>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">及格分数</label>
+                <div className="relative">
+                  <input type="number" defaultValue={80} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold" />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">分</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+};
+
 // --- Main App ---
 export default function App() {
   const [activeMenu, setActiveMenu] = useState<MenuType>('equipment');
@@ -2195,7 +2443,8 @@ export default function App() {
           {activeMenu === 'employee' && <EmployeeDetails />}
           {activeMenu === 'talent' && <TalentDistribution />}
           {activeMenu === 'warning' && <WarningCenter />}
-          {activeMenu === 'task' && <TaskCenter />}
+          {activeMenu === 'task' && <TaskCenter onAddPlan={() => setActiveMenu('task-detail')} />}
+          {activeMenu === 'task-detail' && <TrainingPlanDetail onBack={() => setActiveMenu('task')} />}
           {activeMenu === 'portal' && <PortalDashboard onSelectSOP={() => setActiveMenu('sop')} />}
         </motion.div>
       </AnimatePresence>
