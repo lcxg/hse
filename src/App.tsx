@@ -2244,6 +2244,28 @@ const TrainingPlanDetail = ({ onBack }: { onBack: () => void }) => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">计划分类</label>
+                      <select className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium">
+                        <option value="env">环境</option>
+                        <option value="health">职业健康</option>
+                        <option value="emergency">应急</option>
+                        <option value="fire">消防</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">培训学时</label>
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          defaultValue={2}
+                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">学时</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <label className="text-sm font-bold text-gray-700">培训月份</label>
                       <select className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium">
                         {Array.from({ length: 12 }, (_, i) => (
@@ -2299,6 +2321,15 @@ const TrainingPlanDetail = ({ onBack }: { onBack: () => void }) => {
                 </div>
 
                 <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">培训对象</label>
+                    <select className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium">
+                      <option value="worker">一线操作工</option>
+                      <option value="leader">班组长</option>
+                      <option value="manager">主要负责人</option>
+                      <option value="other">其他管理人员</option>
+                    </select>
+                  </div>
                   <div className="space-y-4">
                     <label className="text-sm font-bold text-gray-700">人员选择</label>
                     <div className="flex gap-2">
