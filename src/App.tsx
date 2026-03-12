@@ -2242,13 +2242,23 @@ const TrainingPlanDetail = ({ onBack }: { onBack: () => void }) => {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">培训主题</label>
-                    <input 
-                      type="text" 
-                      defaultValue="2026年春节安全消防培训"
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">培训月份</label>
+                      <select className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium">
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1}月</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">培训主题</label>
+                      <input 
+                        type="text" 
+                        defaultValue="2026年春节安全消防培训"
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">培训内容</label>
