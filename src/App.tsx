@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Settings, 
@@ -29,6 +29,10 @@ import {
   CalendarClock,
   Send,
   Shield,
+  ShieldCheck,
+  Check,
+  Play,
+  QrCode,
   Wrench,
   Leaf,
   History,
@@ -51,7 +55,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
-type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task' | 'task-detail';
+type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task' | 'task-detail' | 'calendar' | 'personal-tasks';
 
 const FACTORY_WORKSHOPS: Record<string, string[]> = {
   '兖州工厂': ['一期半成品车间', '密炼车间', '成型车间'],
@@ -210,6 +214,8 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
     { id: 'employee', label: '员工详情', icon: UserCircle },
     { id: 'talent', label: '人才分布', icon: Map },
     { id: 'warning', label: '复审预警', icon: Bell },
+    { id: 'calendar', label: '部门计划', icon: Calendar },
+    { id: 'personal-tasks', label: '个人任务', icon: ClipboardCheck },
   ];
 
   return (
@@ -683,52 +689,148 @@ const TrainingPromptModal = ({
   affectedStations: string[],
   personCount?: number
 }) => {
+  const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    if (isOpen) setStep(1);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
-      >
-        <div className="p-8 text-center space-y-6">
-          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle size={40} />
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold text-gray-900">检测到岗位受影响</h3>
-            <div className="py-3 px-4 bg-amber-50 rounded-2xl border border-amber-100">
-              <p className="text-sm text-amber-800 leading-relaxed">
-                检测到 <span className="font-bold underline">“{affectedStations.join('、')}”</span> 受此 SOP 变更影响，人数 <span className="font-bold">{personCount}人</span>。
-              </p>
-            </div>
-            <p className="text-sm text-gray-500 mt-4 font-medium">是否立即发起新一轮岗位培训？</p>
-          </div>
+  // Mock data for affected personnel
+  const mockPersonnel = [
+    { id: '1', name: '张建国', dept: '一期半成品车间', status: 'affected' },
+    { id: '2', name: '李卫东', dept: '一期半成品车间', status: 'affected' },
+    { id: '3', name: '王志强', dept: '二期成型车间', status: 'affected' },
+    { id: '4', name: '赵铁柱', dept: '二期成型车间', status: 'affected' },
+    { id: '5', name: '刘小明', dept: '二期成型车间', status: 'affected' },
+    { id: '6', name: '周大为', dept: '硫化车间', status: 'affected' },
+  ];
 
-          <div className="grid grid-cols-2 gap-3 pt-4">
-            <button 
-              onClick={() => {
-                alert('已成功发起培训流程！');
-                onClose();
-              }}
-              className="px-6 py-3 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
-            >
-              发起培训
-            </button>
-            <button 
-              onClick={() => {
-                alert('文档已更新，未发起培训。');
-                onClose();
-              }}
-              className="px-6 py-3 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
-            >
-              仅更新文档
-            </button>
-          </div>
-        </div>
-      </motion.div>
+  const groupedPersonnel = mockPersonnel.reduce((acc, person) => {
+    if (!acc[person.dept]) {
+      acc[person.dept] = [];
+    }
+    acc[person.dept].push(person);
+    return acc;
+  }, {} as Record<string, typeof mockPersonnel>);
+
+  const deptCount = Object.keys(groupedPersonnel).length;
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <AnimatePresence mode="wait">
+        {step === 1 ? (
+          <motion.div 
+            key="step1"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden"
+          >
+            <div className="p-10 text-center space-y-8">
+              <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                <AlertCircle size={40} />
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-2xl font-bold text-gray-900">检测到岗位受影响</h3>
+                <div className="py-4 px-6 bg-amber-50 rounded-2xl border border-amber-100">
+                  <p className="text-sm text-amber-800 leading-relaxed font-medium">
+                    检测到 <span className="font-bold underline">“{affectedStations.join('、')}”</span> 受此 SOP 变更影响，涉及 <span className="font-bold">{personCount}人</span>。
+                  </p>
+                </div>
+                <p className="text-sm text-gray-500 font-medium">是否立即发起新一轮岗位培训？</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <button 
+                  onClick={() => setStep(2)}
+                  className="w-full py-4 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                >
+                  立即发起培训
+                </button>
+                <button 
+                  onClick={() => {
+                    alert('文档已更新，未发起培训。');
+                    onClose();
+                  }}
+                  className="w-full py-4 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                >
+                  仅更新文档
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="step2"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            className="bg-[#1a1a1a] text-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-white/5"
+          >
+            <div className="p-10 space-y-8">
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold tracking-tight">确认培训下发名单</h3>
+                <p className="text-sm text-gray-400">
+                  系统已按部门自动拆分为 {deptCount} 个培训计划，请确认受影响人员名单
+                </p>
+              </div>
+
+              <div className="bg-emerald-500/10 p-4 rounded-2xl text-sm text-emerald-300 border border-emerald-500/20 flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <p>点击“确认下发”后，系统将自动向对应部门管理员推送培训任务</p>
+              </div>
+
+              <div className="space-y-10 py-2 max-h-[350px] overflow-auto pr-2 custom-scrollbar">
+                {Object.entries(groupedPersonnel).map(([dept, people]) => (
+                  <div key={dept} className="space-y-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="font-bold text-lg text-gray-100">{dept}</span>
+                        <span className="text-gray-500 text-sm font-medium">{people.length} 人</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {people.map(p => (
+                        <div 
+                          key={p.id} 
+                          className="px-5 py-2 rounded-full text-sm font-bold bg-[#2d2d2d] text-white border border-gray-700 shadow-sm transition-transform hover:scale-105 flex items-center gap-2"
+                        >
+                          <span>{p.name}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                        </div>
+                      ))}
+                      <div className="px-5 py-2 rounded-full text-sm font-bold bg-transparent text-gray-600 border border-dashed border-gray-800">
+                        等 {personCount - mockPersonnel.length} 人...
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-4 pt-6 border-t border-white/5">
+                <button 
+                  onClick={() => setStep(1)}
+                  className="px-8 py-4 bg-[#262626] text-gray-300 font-bold rounded-2xl hover:bg-[#333333] transition-all border border-gray-800"
+                >
+                  返回
+                </button>
+                <button 
+                  onClick={() => {
+                    alert('已成功下发培训计划至各部门管理员！');
+                    onClose();
+                  }}
+                  className="px-8 py-4 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20"
+                >
+                  确认下发培训
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1663,83 +1765,87 @@ const TrainingPlanModal = ({
 }) => {
   if (!isOpen) return null;
 
-  const stationName = selectedRecords[0]?.certName || '多岗位';
-  const planName = `关于 ${stationName} 的定期复审培训`;
+  const groupedRecords = selectedRecords.reduce((acc, record) => {
+    if (!acc[record.dept]) {
+      acc[record.dept] = [];
+    }
+    acc[record.dept].push(record);
+    return acc;
+  }, {} as Record<string, WarningRecord[]>);
+
+  const deptCount = Object.keys(groupedRecords).length;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+        className="bg-[#1a1a1a] text-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-white/5"
       >
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-emerald-50/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
-              <Send size={24} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">发起培训计划</h3>
-              <p className="text-xs text-gray-500">自动填充复审培训相关配置</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
-            <Plus size={24} className="rotate-45" />
-          </button>
-        </div>
-
-        <div className="p-8 space-y-6">
+        <div className="p-10 space-y-8">
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">计划名称</label>
-            <input 
-              defaultValue={planName}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 outline-none font-medium" 
-            />
+            <h3 className="text-2xl font-bold tracking-tight">发起复审培训</h3>
+            <p className="text-sm text-gray-400">
+              已选 {selectedRecords.length} 人，系统按部门自动拆分为 {deptCount} 个培训计划，将推送给对应部门管理员排期
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">受训名单 ({selectedRecords.length} 人)</label>
-            <div className="flex flex-wrap gap-2 p-4 bg-gray-50 border border-gray-200 rounded-xl max-h-[120px] overflow-auto">
-              {selectedRecords.map(r => (
-                <span key={r.id} className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700">
-                  {r.empName} ({r.empId})
-                </span>
-              ))}
-            </div>
+          <div className="bg-[#1e293b]/50 p-4 rounded-2xl text-sm text-blue-300 border border-blue-500/20 flex items-center gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
+            <p>系统将为每个部门生成独立培训计划，部门管理员收到后自行排期下发</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">关联 SOP</label>
-              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                <p className="text-xs font-bold text-emerald-700">系统自动调取：</p>
-                <p className="text-sm text-emerald-800 mt-1">《{stationName} 标准化操作规程》</p>
-                <p className="text-sm text-emerald-800">《安全生产通用总则》</p>
+          <div className="space-y-10 py-2 max-h-[400px] overflow-auto pr-2 custom-scrollbar">
+            {Object.entries(groupedRecords).map(([dept, records]) => (
+              <div key={dept} className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold text-lg text-gray-100">{dept}</span>
+                    <span className="text-gray-500 text-sm font-medium">{records.length} 人</span>
+                  </div>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-[#2d2d2d] border border-gray-700 rounded-xl text-sm text-blue-400 hover:bg-[#3d3d3d] transition-all font-bold">
+                    选择试卷 <ChevronDown size={14} />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {records.map(r => (
+                    <div 
+                      key={r.id} 
+                      className={cn(
+                        "px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-transform hover:scale-105",
+                        r.status === 'expired' ? "bg-[#fde2e2] text-[#c53030]" :
+                        r.status === 'expiring' ? "bg-[#fef3c7] text-[#92400e]" :
+                        "bg-[#2d2d2d] text-white border border-gray-700"
+                      )}
+                    >
+                      <span>{r.empName}</span>
+                      <span className="opacity-60 text-xs font-medium">
+                        {r.status === 'expired' ? '已过期' : `${r.daysRemaining}天`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">关联题库</label>
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs font-bold text-blue-700">系统自动调取：</p>
-                <p className="text-sm text-blue-800 mt-1">{stationName} 复审专项题库</p>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
 
-        <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-end gap-3">
-          <button onClick={onClose} className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">
-            取消
-          </button>
-          <button 
-            onClick={() => {
-              alert('培训计划已下发至受训人员手机端！');
-              onClose();
-            }}
-            className="px-8 py-2.5 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"
-          >
-            下发计划
-          </button>
+          <div className="flex justify-end gap-4 pt-6 border-t border-white/5">
+            <button 
+              onClick={onClose} 
+              className="px-8 py-4 bg-[#262626] text-gray-300 font-bold rounded-2xl hover:bg-[#333333] transition-all border border-gray-800"
+            >
+              取消
+            </button>
+            <button 
+              onClick={() => {
+                alert('培训计划已推送至各部门管理员！');
+                onClose();
+              }}
+              className="px-8 py-4 bg-[#262626] text-white font-bold rounded-2xl hover:bg-[#333333] transition-all border border-gray-700 shadow-xl"
+            >
+              确认推送给部门管理员
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -2486,9 +2592,1244 @@ export default function App() {
           {activeMenu === 'warning' && <WarningCenter />}
           {activeMenu === 'task' && <TaskCenter onAddPlan={() => setActiveMenu('task-detail')} />}
           {activeMenu === 'task-detail' && <TrainingPlanDetail onBack={() => setActiveMenu('task')} />}
+          {activeMenu === 'calendar' && <TrainingCalendar />}
+          {activeMenu === 'personal-tasks' && <PersonalWorkbench />}
           {activeMenu === 'portal' && <PortalDashboard onSelectSOP={() => setActiveMenu('sop')} />}
         </motion.div>
       </AnimatePresence>
     </div>
   );
 }
+
+// --- Personal Workbench Component ---
+const PersonalWorkbench = () => {
+  const [activeTab, setActiveTab] = useState<'todo' | 'completed'>('todo');
+  const [showSopModal, setShowSopModal] = useState(false);
+  const [sopRead, setSopRead] = useState(false);
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
+
+  const onboardingNodes = [
+    { id: 'company', label: '公司', status: 'completed' },
+    { id: 'factory', label: '工厂', status: 'completed' },
+    { id: 'workshop', label: '车间', status: 'completed' },
+    { id: 'quality', label: '质量', status: 'current' },
+    { id: 'pcs', label: 'PCS', status: 'pending' },
+    { id: 'oee', label: 'OEE', status: 'pending' },
+    { id: 'comprehensive', label: '综合', status: 'pending' },
+  ];
+
+  const todoTasks = [
+    { id: 't1', title: '入职安全考核 7 项', progress: '3/7', type: 'onboarding' },
+    { id: 't2', title: '成型机 SOP V2.2 更新培训', type: 'sop', urgent: true, deadline: '2026-03-15' },
+    { id: 't3', title: '季度安全知识竞赛', type: 'general', deadline: '2026-03-20' },
+  ];
+
+  const certifications = [
+    { id: 'c1', name: '成型主机岗上岗证', level: '初级', issueDate: '2025-06-10', expiryDate: '2026-06-10', status: 'valid' },
+    { id: 'c2', name: '叉车驾驶证', level: 'B类', issueDate: '2023-03-20', expiryDate: '2026-03-20', status: 'warning' },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#F8F9FA]">
+      <header className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <img 
+                src="https://picsum.photos/seed/user123/128/128" 
+                alt="Avatar" 
+                className="w-20 h-20 rounded-[28px] object-cover border-4 border-white shadow-xl"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-black text-gray-900">张三</h2>
+                <span className="text-sm font-bold text-gray-400">工号：12345</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-600 text-[10px] font-bold rounded-full uppercase tracking-wider border border-emerald-200">
+                  新员工（待定岗）
+                </span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-600 text-[10px] font-bold rounded-full uppercase tracking-wider border border-blue-200">
+                  一期半成品车间
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <div className="text-right">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">本月学习时长</div>
+              <div className="text-2xl font-black text-gray-900">12.5 <span className="text-sm font-bold text-gray-400">小时</span></div>
+            </div>
+            <div className="w-px h-10 bg-gray-200 self-center" />
+            <div className="text-right">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">考核合格率</div>
+              <div className="text-2xl font-black text-emerald-500">98%</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Onboarding Progress Bar */}
+        <div className="mt-10 bg-gray-50 p-6 rounded-[32px] border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <ShieldCheck size={18} className="text-emerald-500" /> 入职准入进度
+            </h3>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">已点亮 3/7 节点</span>
+          </div>
+          <div className="flex items-center justify-between relative px-4">
+            <div className="absolute top-1/2 left-8 right-8 h-1 bg-gray-200 -translate-y-1/2 z-0" />
+            <div 
+              className="absolute top-1/2 left-8 h-1 bg-emerald-500 -translate-y-1/2 z-0 transition-all duration-1000" 
+              style={{ width: '33%' }}
+            />
+            {onboardingNodes.map((node, i) => (
+              <div key={node.id} className="relative z-10 flex flex-col items-center gap-3">
+                <div 
+                  className={cn(
+                    "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm",
+                    node.status === 'completed' ? "bg-emerald-500 text-white shadow-emerald-200" :
+                    node.status === 'current' ? "bg-white border-2 border-emerald-500 text-emerald-500 animate-pulse" :
+                    "bg-white border-2 border-gray-100 text-gray-300"
+                  )}
+                  onClick={() => {
+                    if (node.id === 'comprehensive' && node.status === 'pending') {
+                      // Mock completion for demo
+                      setShowPromotionModal(true);
+                    }
+                  }}
+                >
+                  {node.status === 'completed' ? <Check size={20} /> : <span className="text-xs font-bold">{i + 1}</span>}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-bold tracking-wider",
+                  node.status === 'completed' ? "text-emerald-600" :
+                  node.status === 'current' ? "text-gray-900" : "text-gray-400"
+                )}>
+                  {node.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-auto p-8 flex gap-8">
+        {/* Left Column: Tasks */}
+        <div className="flex-1 flex flex-col gap-6">
+          <div className="flex items-center gap-8 border-b border-gray-100">
+            <button 
+              onClick={() => setActiveTab('todo')}
+              className={cn(
+                "pb-4 text-sm font-bold transition-all relative",
+                activeTab === 'todo' ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              待办任务
+              {activeTab === 'todo' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-full" />}
+              <span className="ml-2 px-1.5 py-0.5 bg-rose-500 text-white text-[8px] rounded-full">3</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('completed')}
+              className={cn(
+                "pb-4 text-sm font-bold transition-all relative",
+                activeTab === 'completed' ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              已完成记录
+              {activeTab === 'completed' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-full" />}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {activeTab === 'todo' ? (
+              todoTasks.map(task => (
+                <motion.div 
+                  key={task.id}
+                  whileHover={{ x: 4 }}
+                  className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+                  onClick={() => task.type === 'sop' && setShowSopModal(true)}
+                >
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0",
+                      task.type === 'onboarding' ? "bg-blue-50 text-blue-500" :
+                      task.type === 'sop' ? "bg-amber-50 text-amber-500" : "bg-gray-50 text-gray-500"
+                    )}>
+                      {task.type === 'onboarding' ? <ShieldCheck size={28} /> :
+                       task.type === 'sop' ? <BookOpen size={28} /> : <ClipboardCheck size={28} />}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-gray-900">{task.title}</h4>
+                        {task.urgent && (
+                          <span className="px-2 py-0.5 bg-rose-100 text-rose-600 text-[8px] font-black rounded uppercase tracking-tighter">紧急</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        {task.progress && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500" style={{ width: '42%' }} />
+                            </div>
+                            <span className="text-[10px] font-bold text-blue-600">进度 {task.progress}</span>
+                          </div>
+                        )}
+                        {task.deadline && (
+                          <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                            <Clock size={12} /> 截止日期: {task.deadline}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                    <ChevronRight size={20} />
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <History size={48} className="mb-4 opacity-20" />
+                <p className="text-sm">暂无历史记录</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Certifications */}
+        <div className="w-96 flex flex-col gap-6">
+          <div className="bg-gray-900 rounded-[40px] p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-16 -mt-16" />
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <Trophy size={20} className="text-emerald-400" /> 我的资质/证书
+            </h3>
+            <div className="space-y-4">
+              {certifications.map(cert => (
+                <div 
+                  key={cert.id}
+                  onClick={() => setShowCertModal(true)}
+                  className={cn(
+                    "p-5 rounded-3xl border transition-all cursor-pointer group",
+                    cert.status === 'warning' 
+                      ? "bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20" 
+                      : "bg-white/5 border-white/10 hover:bg-white/10"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-bold">{cert.name}</span>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                      cert.status === 'warning' ? "bg-amber-500 text-white" : "bg-emerald-500/20 text-emerald-400"
+                    )}>
+                      {cert.status === 'warning' ? '需复审' : cert.level}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-white/40">
+                    <span>有效期至: {cert.expiryDate}</span>
+                    <div className="flex items-center gap-1 group-hover:text-white transition-colors">
+                      查看详情 <ChevronRight size={10} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Learning Progress Charts */}
+          <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-8">
+            <h3 className="text-sm font-bold text-gray-900">年度学习概览</h3>
+            <div className="flex justify-around">
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle cx="48" cy="48" r="40" fill="none" stroke="#F3F4F6" strokeWidth="8" />
+                    <circle cx="48" cy="48" r="40" fill="none" stroke="#10B981" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="62.8" strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-black text-gray-900">75%</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">学习时长达标</span>
+              </div>
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                  <svg className="w-full h-full -rotate-90">
+                    <circle cx="48" cy="48" r="40" fill="none" stroke="#F3F4F6" strokeWidth="8" />
+                    <circle cx="48" cy="48" r="40" fill="none" stroke="#3B82F6" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="25.1" strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-black text-gray-900">90%</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">考核合格率</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* SOP Training Modal */}
+      <AnimatePresence>
+        {showSopModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-gray-900">成型机 SOP V2.2 更新培训</h3>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded font-bold">待学习</span>
+                    <span>时长: 15 分钟</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowSopModal(false)}
+                  className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-all"
+                >
+                  <Plus size={24} className="rotate-45" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto p-8 space-y-8">
+                <div className="aspect-video bg-gray-900 rounded-[32px] relative overflow-hidden group">
+                  <img 
+                    src="https://picsum.photos/seed/factory/1280/720" 
+                    alt="Training Video" 
+                    className="w-full h-full object-cover opacity-60"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button 
+                      onClick={() => setSopRead(true)}
+                      className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/40 hover:scale-110 transition-transform"
+                    >
+                      <Play size={32} fill="currentColor" />
+                    </button>
+                  </div>
+                  <div className="absolute bottom-6 left-6 right-6 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 w-1/3" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900">培训要点</h4>
+                  <ul className="space-y-3">
+                    {[
+                      '更新了成型机 1# 站位的喂胶角度标准',
+                      '新增了紧急停机后的复位检查流程',
+                      '优化了半成品胎胚的抓取力度参数'
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-gray-600">
+                        <div className="w-5 h-5 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center shrink-0">
+                          <Check size={12} />
+                        </div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+                <button 
+                  disabled={!sopRead}
+                  className={cn(
+                    "flex-1 py-5 rounded-2xl font-bold transition-all shadow-lg",
+                    sopRead 
+                      ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/20" 
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  )}
+                  onClick={() => alert('进入考试模式...')}
+                >
+                  {sopRead ? "开始考试" : "请先完成视频学习"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Certificate Modal */}
+      <AnimatePresence>
+        {showCertModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+            >
+              <div className="p-10 bg-gray-900 text-white text-center space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#10B981_0%,transparent_70%)]" />
+                </div>
+                <div className="w-20 h-20 bg-emerald-500 rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-emerald-500/40">
+                  <Trophy size={40} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black tracking-tight">电子上岗证</h3>
+                  <p className="text-emerald-400 font-bold text-sm tracking-widest uppercase">Electronic Operation Certificate</p>
+                </div>
+                <div className="pt-6 border-t border-white/10 flex justify-between text-left">
+                  <div className="space-y-1">
+                    <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest">持证人</div>
+                    <div className="text-sm font-bold">张三</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest">工号</div>
+                    <div className="text-sm font-bold">12345</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest">岗位</div>
+                    <div className="text-sm font-bold">成型主机岗</div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-10 flex flex-col items-center gap-8">
+                <div className="p-4 bg-white border-2 border-gray-100 rounded-3xl shadow-inner">
+                  <div className="w-40 h-40 bg-gray-50 flex items-center justify-center relative">
+                    <QrCode size={120} className="text-gray-900" />
+                    <div className="absolute inset-0 bg-emerald-500/5 flex items-center justify-center">
+                      <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center">
+                        <ShieldCheck size={16} className="text-emerald-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-xs font-bold text-gray-900">扫码核实操作权限</p>
+                  <p className="text-[10px] text-gray-400 leading-relaxed">此二维码包含实时生成的防伪加密信息，<br />巡检人员扫码即可核实该员工是否具备该机台的操作权限。</p>
+                </div>
+                <button 
+                  onClick={() => setShowCertModal(false)}
+                  className="w-full py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition-all"
+                >
+                  关闭
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Promotion Modal */}
+      <AnimatePresence>
+        {showPromotionModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-emerald-500/20 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.5, rotate: 10 }}
+              className="bg-white rounded-[48px] shadow-2xl p-12 text-center max-w-md relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
+              <div className="w-24 h-24 bg-emerald-100 text-emerald-500 rounded-full mx-auto flex items-center justify-center mb-8">
+                <Sparkles size={48} />
+              </div>
+              <h3 className="text-3xl font-black text-gray-900 mb-4">恭喜您！</h3>
+              <p className="text-gray-600 leading-relaxed mb-8">
+                您已完成入职考核，身份已晋升为 <span className="text-emerald-600 font-bold">学徒</span>，请等待岗位分配。
+              </p>
+              <button 
+                onClick={() => setShowPromotionModal(false)}
+                className="w-full py-5 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20"
+              >
+                太棒了，我知道了
+              </button>
+              <div className="mt-6 flex justify-center gap-1">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="w-1.5 h-1.5 bg-emerald-200 rounded-full" />
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+interface Attendee {
+  id: string;
+  name: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  score?: number;
+  indicators: boolean[];
+}
+
+interface CalendarTask {
+  id: string;
+  title: string;
+  type: 'annual' | 'sop' | 'urgent' | 'internal';
+  date?: string; // YYYY-MM-DD
+  personnel: string[];
+  attendees?: Attendee[];
+  isDraft?: boolean;
+  isOverdue?: boolean;
+  category?: 'safety' | 'skill' | 'quality';
+}
+
+const TrainingCalendar = () => {
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1)); // March 2026
+  const [tasks, setTasks] = useState<CalendarTask[]>([
+    { 
+      id: '1', 
+      title: '年度消防培训', 
+      type: 'annual', 
+      date: '2026-03-10', 
+      personnel: ['张建国', '李卫东', '王志强'], 
+      isDraft: true 
+    },
+    { 
+      id: '2', 
+      title: '成型机 SOP V2.1 培训', 
+      type: 'sop', 
+      date: '2026-03-15', 
+      personnel: ['赵铁柱', '刘小明', '王大锤', '李二狗', '张三'],
+      attendees: [
+        { id: 'E001', name: '赵铁柱', status: 'completed', score: 95, indicators: [true, true, true, true, true, true, true] },
+        { id: 'E002', name: '刘小明', status: 'completed', score: 88, indicators: [true, true, true, true, true, false, false] },
+        { id: 'E003', name: '王大锤', status: 'in_progress', score: 0, indicators: [true, true, false, false, false, false, false] },
+        { id: 'E004', name: '李二狗', status: 'not_started', score: 0, indicators: [false, false, false, false, false, false, false] },
+        { id: 'E005', name: '张三', status: 'completed', score: 92, indicators: [true, true, true, true, true, true, true] },
+      ]
+    },
+    { 
+      id: '3', 
+      title: '资质复审：压力容器操作', 
+      type: 'urgent', 
+      date: '2026-03-05', 
+      personnel: ['孙志远'],
+      isOverdue: true,
+      attendees: [
+        { id: 'E006', name: '孙志远', status: 'not_started', score: 0, indicators: [false, false, false, false, false, false, false] }
+      ]
+    },
+  ]);
+
+  const [sidebarTasks, setSidebarTasks] = useState<CalendarTask[]>([
+    { id: '4', title: 'SOP V2.2 更新培训', type: 'sop', personnel: ['四复合 1# 机台 5名员工'] },
+    { id: '5', title: '新员工入职安全培训', type: 'annual', personnel: ['刘小明', '周大为'] },
+  ]);
+
+  const [selectedTask, setSelectedTask] = useState<CalendarTask | null>(null);
+  const [showPersonnelModal, setShowPersonnelModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showInternalModal, setShowInternalModal] = useState(false);
+  const [internalStep, setInternalStep] = useState(1);
+  const [internalForm, setInternalForm] = useState({
+    title: '',
+    category: 'safety',
+    date: '',
+    contentSource: 'library',
+    selectionMode: 'machine',
+    personnel: [] as string[]
+  });
+
+  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const days = daysInMonth(year, month);
+  const offset = firstDayOfMonth(year, month);
+
+  const calendarDays = Array.from({ length: 42 }, (_, i) => {
+    const day = i - offset + 1;
+    if (day > 0 && day <= days) {
+      return { day, date: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` };
+    }
+    return null;
+  });
+
+  const handleDragStart = (e: React.DragEvent, task: CalendarTask) => {
+    e.dataTransfer.setData('taskId', task.id);
+  };
+
+  const handleDrop = (e: React.DragEvent, date: string) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    const task = sidebarTasks.find(t => t.id === taskId) || tasks.find(t => t.id === taskId);
+    
+    if (task) {
+      const updatedTask = { ...task, date, isDraft: false };
+      if (sidebarTasks.find(t => t.id === taskId)) {
+        setSidebarTasks(sidebarTasks.filter(t => t.id !== taskId));
+        setTasks([...tasks, updatedTask]);
+      } else {
+        setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
+      }
+      setSelectedTask(updatedTask);
+      setShowPersonnelModal(true);
+    }
+  };
+
+  const handleTaskClick = (task: CalendarTask) => {
+    setSelectedTask(task);
+    if (task.isDraft) {
+      setShowPersonnelModal(true);
+    } else {
+      setShowDetailModal(true);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#F8F9FA]">
+      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <h2 className="text-xl font-bold text-gray-900">培训排期看板</h2>
+          <div className="flex items-center bg-gray-100 rounded-xl p-1">
+            <button 
+              onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
+              className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+            >
+              <ChevronRight size={18} className="rotate-180" />
+            </button>
+            <span className="px-4 font-bold text-sm">{year}年 {month + 1}月</span>
+            <button 
+              onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
+              className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+            <Users size={16} className="text-gray-400" />
+            <span className="text-sm font-medium text-gray-600">部门：一期半成品车间</span>
+            <div className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+              <Shield size={10} className="text-white" />
+            </div>
+          </div>
+          <button className="p-2 text-gray-400 hover:text-gray-600">
+            <Filter size={20} />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Calendar Grid */}
+        <main className="flex-1 overflow-auto p-6">
+          <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+            {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(day => (
+              <div key={day} className="bg-gray-50 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                {day}
+              </div>
+            ))}
+            {calendarDays.map((d, i) => (
+              <div 
+                key={i} 
+                onDragOver={(e: React.DragEvent) => e.preventDefault()}
+                onDrop={(e: React.DragEvent) => d && handleDrop(e, d.date)}
+                className={cn(
+                  "bg-white min-h-[120px] p-2 transition-colors",
+                  d ? "hover:bg-gray-50/50" : "bg-gray-50/30"
+                )}
+              >
+                {d && (
+                  <div className="flex flex-col h-full">
+                    <span className={cn(
+                      "text-sm font-bold mb-2 w-7 h-7 flex items-center justify-center rounded-full",
+                      d.day === new Date().getDate() && month === new Date().getMonth() ? "bg-emerald-500 text-white" : "text-gray-400"
+                    )}>
+                      {d.day}
+                    </span>
+                    <div className="space-y-1">
+                      {tasks.filter(t => t.date === d.date).map(task => (
+                        <motion.div
+                          key={task.id}
+                          layoutId={task.id}
+                          onClick={() => handleTaskClick(task)}
+                          className={cn(
+                            "px-2 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all border shadow-sm relative group",
+                            task.type === 'annual' && (task.isDraft ? "bg-blue-50 text-blue-600 border-blue-200 border-dashed" : "bg-blue-500 text-white border-blue-600"),
+                            task.type === 'sop' && "bg-amber-500 text-white border-amber-600",
+                            task.type === 'urgent' && "bg-rose-500 text-white border-rose-600",
+                            task.type === 'internal' && "bg-emerald-500 text-white border-emerald-600",
+                            task.isOverdue && "border-red-500 border-dashed ring-1 ring-red-500/50"
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="truncate">{task.title}</div>
+                            {task.isOverdue && (
+                              <span className="shrink-0 bg-red-600 text-white px-1 rounded-sm text-[8px] animate-pulse">逾期</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5 opacity-80">
+                            <Users size={8} /> {task.personnel.length}人
+                          </div>
+                          
+                          {/* Progress Bar */}
+                          {!task.isDraft && (
+                            <div className="mt-1.5 w-full h-1 bg-black/10 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-white transition-all duration-500" 
+                                style={{ 
+                                  width: `${task.attendees ? (task.attendees.filter(a => a.status === 'completed').length / task.attendees.length) * 100 : 0}%` 
+                                }} 
+                              />
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </main>
+
+        {/* Sidebar Tasks */}
+        <aside className="w-80 bg-white border-l border-gray-200 flex flex-col shadow-xl z-10">
+          <div className="p-6 border-b border-gray-100 bg-gray-50/50 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Inbox size={18} className="text-emerald-500" /> 待排期任务
+              </h3>
+              <button 
+                onClick={() => {
+                  setInternalStep(1);
+                  setShowInternalModal(true);
+                }}
+                className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-sm shadow-emerald-500/20 group"
+                title="发起内部培训"
+              >
+                <Plus size={16} className="group-hover:rotate-90 transition-transform" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">拖拽卡片到日历进行排期</p>
+            
+            <button 
+              onClick={() => {
+                setInternalStep(1);
+                setShowInternalModal(true);
+              }}
+              className="w-full py-3 bg-white border-2 border-dashed border-emerald-200 text-emerald-600 rounded-2xl text-xs font-bold hover:bg-emerald-50 hover:border-emerald-300 transition-all flex items-center justify-center gap-2"
+            >
+              <Plus size={14} /> 发起内部培训
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto p-4 space-y-4">
+            {sidebarTasks.map(task => (
+              <div
+                key={task.id}
+                draggable
+                onDragStart={(e: React.DragEvent) => handleDragStart(e, task)}
+                className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    task.type === 'annual' ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600"
+                  )}>
+                    {task.type === 'annual' ? '年度计划' : 'SOP 更新'}
+                  </span>
+                  <div className="text-gray-300 group-hover:text-emerald-500 transition-colors">
+                    <Calendar size={14} />
+                  </div>
+                </div>
+                <h4 className="font-bold text-gray-900 text-sm mb-2">{task.title}</h4>
+                <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                  <Users size={12} />
+                  <span>影响人员: {task.personnel.join(', ')}</span>
+                </div>
+              </div>
+            ))}
+            {sidebarTasks.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <CheckCircle2 size={32} className="mb-2 opacity-20" />
+                <p className="text-xs">暂无待排期任务</p>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+
+      {/* Task Detail Modal */}
+      <AnimatePresence>
+        {showDetailModal && selectedTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900">{selectedTask.title}</h3>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                      selectedTask.type === 'annual' ? "bg-blue-500 text-white" : 
+                      selectedTask.type === 'sop' ? "bg-amber-500 text-white" :
+                      selectedTask.type === 'urgent' ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"
+                    )}>
+                      {selectedTask.type === 'annual' ? '年度计划' : 
+                       selectedTask.type === 'sop' ? 'SOP 培训' :
+                       selectedTask.type === 'urgent' ? '资质复审' : '内部培训'}
+                    </span>
+                    {selectedTask.isOverdue && (
+                      <span className="bg-red-100 text-red-600 px-2 py-1 rounded-lg text-[10px] font-bold border border-red-200">逾期未完成</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500">培训日期: {selectedTask.date}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setShowPersonnelModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-xl hover:bg-emerald-600 transition-all shadow-sm shadow-emerald-500/20"
+                  >
+                    <Plus size={16} /> 增补受训人
+                  </button>
+                  <button 
+                    onClick={() => setShowDetailModal(false)}
+                    className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm flex items-center justify-center text-gray-400 transition-all"
+                  >
+                    <Plus size={24} className="rotate-45" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 flex-1 overflow-auto space-y-8">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-4">
+                  {[
+                    { label: '应到人数', value: selectedTask.personnel.length, icon: Users, color: 'text-blue-500' },
+                    { label: '实到人数', value: selectedTask.attendees?.filter(a => a.status === 'completed').length || 0, icon: CheckCircle2, color: 'text-emerald-500' },
+                    { label: '合格率', value: selectedTask.attendees ? `${Math.round((selectedTask.attendees.filter(a => (a.score || 0) >= 80).length / selectedTask.attendees.length) * 100)}%` : '0%', icon: Trophy, color: 'text-amber-500' },
+                    { label: '平均分', value: selectedTask.attendees ? Math.round(selectedTask.attendees.reduce((acc, curr) => acc + (curr.score || 0), 0) / selectedTask.attendees.length) : 0, icon: BarChart3, color: 'text-indigo-500' },
+                  ].map((stat, i) => (
+                    <div key={i} className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-1">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        <stat.icon size={12} className={stat.color} /> {stat.label}
+                      </div>
+                      <div className="text-2xl font-black text-gray-900">{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Personnel Table */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-gray-900">人员明细表</h4>
+                  <div className="border border-gray-100 rounded-3xl overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100">
+                          <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">姓名 / 工号</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">学习状态</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">7项指标点亮</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">考试成绩</th>
+                          <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {selectedTask.attendees?.map(attendee => (
+                          <tr key={attendee.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-bold text-gray-900">{attendee.name}</div>
+                              <div className="text-[10px] text-gray-400">{attendee.id}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={cn(
+                                "px-2 py-1 rounded-lg text-[10px] font-bold",
+                                attendee.status === 'completed' ? "bg-emerald-50 text-emerald-600" :
+                                attendee.status === 'in_progress' ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-400"
+                              )}>
+                                {attendee.status === 'completed' ? '已完成' :
+                                 attendee.status === 'in_progress' ? '进行中' : '未开始'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-center gap-1.5">
+                                {attendee.indicators.map((passed, i) => (
+                                  <div 
+                                    key={i} 
+                                    className={cn(
+                                      "w-2.5 h-2.5 rounded-full transition-all",
+                                      passed ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-gray-200"
+                                    )} 
+                                    title={`科目 ${i + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <span className={cn(
+                                "font-black text-lg",
+                                (attendee.score || 0) >= 80 ? "text-emerald-500" : "text-gray-900"
+                              )}>
+                                {attendee.status === 'completed' ? attendee.score : '--'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {attendee.status !== 'completed' && (
+                                  <button 
+                                    onClick={() => alert(`已向 ${attendee.name} 发送催办通知！`)}
+                                    className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition-all"
+                                    title="一键催办"
+                                  >
+                                    <Bell size={14} />
+                                  </button>
+                                )}
+                                <button 
+                                  className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                                  title="查看成绩单"
+                                >
+                                  <FileText size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <button 
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-8 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                >
+                  关闭
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Personnel Modal */}
+      <AnimatePresence>
+        {showPersonnelModal && selectedTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col"
+            >
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900">{selectedTask.isDraft ? selectedTask.title : `增补人员：${selectedTask.title}`}</h3>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                      selectedTask.type === 'annual' ? "bg-blue-500 text-white" : "bg-amber-500 text-white"
+                    )}>
+                      {selectedTask.type === 'annual' ? '年度计划' : 'SOP 培训'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">排期日期: {selectedTask.date}</p>
+                </div>
+                <button 
+                  onClick={() => setShowPersonnelModal(false)}
+                  className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm flex items-center justify-center text-gray-400 transition-all"
+                >
+                  <Plus size={24} className="rotate-45" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-8 flex-1 overflow-auto">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-gray-900">参训人员微调</h4>
+                    <span className="text-xs text-gray-500">已选 {selectedTask.personnel.length} 人</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['张建国', '李卫东', '王志强', '赵铁柱', '刘小明', '周大为', '孙志远'].map(name => (
+                      <label 
+                        key={name}
+                        className={cn(
+                          "flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group",
+                          selectedTask.personnel.includes(name) 
+                            ? "bg-emerald-50 border-emerald-200" 
+                            : "bg-white border-gray-100 hover:border-emerald-200"
+                        )}
+                      >
+                        <input 
+                          type="checkbox" 
+                          checked={selectedTask.personnel.includes(name)}
+                          onChange={() => {
+                            const newPersonnel = selectedTask.personnel.includes(name)
+                              ? selectedTask.personnel.filter(p => p !== name)
+                              : [...selectedTask.personnel, name];
+                            setSelectedTask({ ...selectedTask, personnel: newPersonnel });
+                          }}
+                          className="w-5 h-5 rounded-lg border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                        />
+                        <span className={cn(
+                          "text-sm font-medium transition-colors",
+                          selectedTask.personnel.includes(name) ? "text-emerald-700" : "text-gray-600 group-hover:text-emerald-600"
+                        )}>{name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex gap-4">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-sm shrink-0">
+                    <Bell size={24} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-amber-900">确认后将立即下发通知</p>
+                    <p className="text-xs text-amber-700 leading-relaxed">确认排期后，系统将通过企业微信/钉钉向以上 {selectedTask.personnel.length} 名员工发送培训提醒及相关 SOP 资料。</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+                <button 
+                  onClick={() => setShowPersonnelModal(false)}
+                  className="flex-1 py-4 bg-white border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => {
+                    const updatedTask = { ...selectedTask, isDraft: false };
+                    
+                    // If adding to existing task, sync attendees
+                    if (!selectedTask.isDraft && selectedTask.attendees) {
+                      const existingNames = selectedTask.attendees.map(a => a.name);
+                      const newPersonnel = selectedTask.personnel.filter(p => !existingNames.includes(p));
+                      const newAttendees: Attendee[] = newPersonnel.map(name => ({
+                        id: `E${Math.floor(Math.random() * 9000) + 1000}`,
+                        name,
+                        status: 'not_started',
+                        indicators: [false, false, false, false, false, false, false]
+                      }));
+                      updatedTask.attendees = [...selectedTask.attendees, ...newAttendees];
+                    }
+
+                    setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                    setShowPersonnelModal(false);
+                    alert(selectedTask.isDraft ? '排期确认成功，通知已下发！' : '增补人员成功，通知已下发！');
+                  }}
+                  className="flex-1 py-4 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                >
+                  {selectedTask.isDraft ? '确认排期并下发' : '确认增补并下发'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Internal Training Modal */}
+      <AnimatePresence>
+        {showInternalModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900">发起内部培训</h3>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3].map(s => (
+                        <div key={s} className={cn("w-2 h-2 rounded-full transition-all", internalStep >= s ? "bg-emerald-500 w-6" : "bg-gray-200")} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {internalStep === 1 && "第一步：填写基础信息"}
+                    {internalStep === 2 && "第二步：配置培训内容"}
+                    {internalStep === 3 && "第三步：选择培训范围"}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setShowInternalModal(false)}
+                  className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm flex items-center justify-center text-gray-400 transition-all"
+                >
+                  <Plus size={24} className="rotate-45" />
+                </button>
+              </div>
+
+              <div className="p-8 flex-1 overflow-auto">
+                {internalStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">培训标题</label>
+                      <input 
+                        type="text" 
+                        placeholder="例如：一期半成品车间叉车规范培训"
+                        value={internalForm.title}
+                        onChange={e => setInternalForm({...internalForm, title: e.target.value})}
+                        className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">培训类别</label>
+                        <select 
+                          value={internalForm.category}
+                          onChange={e => setInternalForm({...internalForm, category: e.target.value as any})}
+                          className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold"
+                        >
+                          <option value="safety">安全</option>
+                          <option value="skill">技能</option>
+                          <option value="quality">品质</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">培训日期</label>
+                        <input 
+                          type="date" 
+                          value={internalForm.date}
+                          onChange={e => setInternalForm({...internalForm, date: e.target.value})}
+                          className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {internalStep === 2 && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <button 
+                      onClick={() => setInternalForm({...internalForm, contentSource: 'library'})}
+                      className={cn(
+                        "p-8 rounded-[32px] border-2 transition-all text-left space-y-4",
+                        internalForm.contentSource === 'library' ? "bg-emerald-50 border-emerald-500" : "bg-white border-gray-100 hover:border-emerald-200"
+                      )}
+                    >
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm">
+                        <BookOpen size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900">从库中选择</h4>
+                        <p className="text-xs text-gray-500 mt-1">调用 SOP 库或通用试题库</p>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => setInternalForm({...internalForm, contentSource: 'upload'})}
+                      className={cn(
+                        "p-8 rounded-[32px] border-2 transition-all text-left space-y-4",
+                        internalForm.contentSource === 'upload' ? "bg-emerald-50 border-emerald-500" : "bg-white border-gray-100 hover:border-emerald-200"
+                      )}
+                    >
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm">
+                        <Plus size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900">手动上传</h4>
+                        <p className="text-xs text-gray-500 mt-1">临时拍摄的照片或 PDF</p>
+                      </div>
+                    </button>
+                  </div>
+                )}
+
+                {internalStep === 3 && (
+                  <div className="space-y-6">
+                    <div className="flex gap-2">
+                      {[
+                        { id: 'machine', label: '按机台选人' },
+                        { id: 'group', label: '按组别选人' },
+                        { id: 'custom', label: '自定义勾选' }
+                      ].map(mode => (
+                        <button
+                          key={mode.id}
+                          onClick={() => setInternalForm({...internalForm, selectionMode: mode.id as any})}
+                          className={cn(
+                            "flex-1 py-3 rounded-xl text-xs font-bold transition-all",
+                            internalForm.selectionMode === mode.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                          )}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      {['张建国', '李卫东', '王志强', '赵铁柱', '刘小明', '周大为', '孙志远'].map(name => (
+                        <label 
+                          key={name}
+                          className={cn(
+                            "flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group",
+                            internalForm.personnel.includes(name) 
+                              ? "bg-emerald-50 border-emerald-200" 
+                              : "bg-white border-gray-100 hover:border-emerald-200"
+                          )}
+                        >
+                          <input 
+                            type="checkbox" 
+                            checked={internalForm.personnel.includes(name)}
+                            onChange={() => {
+                              const newPersonnel = internalForm.personnel.includes(name)
+                                ? internalForm.personnel.filter(p => p !== name)
+                                : [...internalForm.personnel, name];
+                              setInternalForm({ ...internalForm, personnel: newPersonnel });
+                            }}
+                            className="w-5 h-5 rounded-lg border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <span className={cn(
+                            "text-sm font-medium transition-colors",
+                            internalForm.personnel.includes(name) ? "text-emerald-700" : "text-gray-600 group-hover:text-emerald-600"
+                          )}>{name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+                {internalStep > 1 && (
+                  <button 
+                    onClick={() => setInternalStep(internalStep - 1)}
+                    className="flex-1 py-4 bg-white border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                  >
+                    上一步
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    if (internalStep < 3) {
+                      setInternalStep(internalStep + 1);
+                    } else {
+                      // Submit
+                      const newTask: CalendarTask = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        title: internalForm.title || '部门内部培训',
+                        type: 'internal',
+                        date: internalForm.date || '2026-03-20',
+                        personnel: internalForm.personnel.length > 0 ? internalForm.personnel : ['部门全员'],
+                        category: internalForm.category as any
+                      };
+                      setTasks([...tasks, newTask]);
+                      setShowInternalModal(false);
+                      alert('内部培训发起成功！');
+                    }
+                  }}
+                  className="flex-1 py-4 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                >
+                  {internalStep === 3 ? "提交并发布" : "下一步"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
