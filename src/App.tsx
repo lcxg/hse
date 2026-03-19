@@ -43,7 +43,14 @@ import {
   BarChart3,
   Circle,
   Sparkles,
-  Wand2
+  Wand2,
+  Globe,
+  UserPlus,
+  Network,
+  MapPin,
+  X,
+  Home,
+  User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -55,7 +62,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
-type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task' | 'task-detail' | 'calendar' | 'personal-tasks';
+type MenuType = 'equipment' | 'sop' | 'station' | 'employee' | 'talent' | 'warning' | 'portal' | 'task' | 'task-detail' | 'calendar' | 'personal-tasks' | 'user-management';
 
 const FACTORY_WORKSHOPS: Record<string, string[]> = {
   '兖州工厂': ['一期半成品车间', '密炼车间', '成型车间'],
@@ -205,9 +212,10 @@ const PortalDashboard = ({ onSelectSOP }: { onSelectSOP: () => void }) => {
 };
 
 const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiveMenu: (m: MenuType) => void }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isSopExpanded, setIsSopExpanded] = useState(true);
+  const [isOrgExpanded, setIsOrgExpanded] = useState(true);
   
-  const subMenus = [
+  const sopSubMenus = [
     { id: 'equipment', label: '机台管理', icon: Settings },
     { id: 'sop', label: 'SOP 文档管理', icon: FileText },
     { id: 'station', label: '岗位管理', icon: Users },
@@ -218,6 +226,10 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
     { id: 'personal-tasks', label: '个人任务', icon: ClipboardCheck },
   ];
 
+  const orgSubMenus = [
+    { id: 'user-management', label: '用户管理', icon: Users },
+  ];
+
   return (
     <div className="w-64 bg-[#151619] text-white h-screen flex flex-col border-r border-white/10">
       <div className="p-6 flex items-center gap-3 border-bottom border-white/5">
@@ -226,58 +238,60 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
         </div>
         <h1 className="font-bold text-lg tracking-tight">工业管理系统</h1>
       </div>
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        <button
-          onClick={() => setActiveMenu('portal')}
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
-            activeMenu === 'portal' 
-              ? "bg-emerald-500/10 text-emerald-400" 
-              : "text-gray-400 hover:bg-white/5 hover:text-white"
-          )}
-        >
-          <LayoutDashboard size={20} className={cn(
-            activeMenu === 'portal' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
-          )} />
-          <span className="font-bold text-xs uppercase tracking-widest">应用门户</span>
-        </button>
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto custom-scrollbar">
+        <div className="space-y-1">
+          <button
+            onClick={() => setActiveMenu('portal')}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
+              activeMenu === 'portal' 
+                ? "bg-emerald-500/10 text-emerald-400" 
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            )}
+          >
+            <LayoutDashboard size={20} className={cn(
+              activeMenu === 'portal' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
+            )} />
+            <span className="font-bold text-xs uppercase tracking-widest">应用门户</span>
+          </button>
 
-        <button
-          onClick={() => setActiveMenu('task')}
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-2",
-            activeMenu === 'task' 
-              ? "bg-emerald-500/10 text-emerald-400" 
-              : "text-gray-400 hover:bg-white/5 hover:text-white"
-          )}
-        >
-          <ClipboardCheck size={20} className={cn(
-            activeMenu === 'task' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
-          )} />
-          <span className="font-bold text-xs uppercase tracking-widest">任务中台</span>
-        </button>
+          <button
+            onClick={() => setActiveMenu('task')}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-2",
+              activeMenu === 'task' 
+                ? "bg-emerald-500/10 text-emerald-400" 
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            )}
+          >
+            <ClipboardCheck size={20} className={cn(
+              activeMenu === 'task' ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
+            )} />
+            <span className="font-bold text-xs uppercase tracking-widest">任务中台</span>
+          </button>
+        </div>
 
         <div className="space-y-1">
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setIsSopExpanded(!isSopExpanded)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group"
           >
-            <LayoutDashboard size={20} className="text-gray-500 group-hover:text-white" />
+            <FileText size={20} className="text-gray-500 group-hover:text-white" />
             <span className="font-bold text-xs uppercase tracking-widest">SOP管理</span>
             <div className="ml-auto">
-              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              {isSopExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </div>
           </button>
 
           <AnimatePresence initial={false}>
-            {isExpanded && (
+            {isSopExpanded && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden pl-4 space-y-1"
               >
-                {subMenus.map((menu) => (
+                {sopSubMenus.map((menu) => (
                   <button
                     key={menu.id}
                     onClick={() => setActiveMenu(menu.id as MenuType)}
@@ -295,6 +309,54 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: MenuType, setActiv
                     {activeMenu === menu.id && (
                       <motion.div 
                         layoutId="active-pill"
+                        className="ml-auto w-1 h-1 rounded-full bg-emerald-400"
+                      />
+                    )}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="space-y-1">
+          <button
+            onClick={() => setIsOrgExpanded(!isOrgExpanded)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group"
+          >
+            <Users size={20} className="text-gray-500 group-hover:text-white" />
+            <span className="font-bold text-xs uppercase tracking-widest">组织架构</span>
+            <div className="ml-auto">
+              {isOrgExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </div>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {isOrgExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden pl-4 space-y-1"
+              >
+                {orgSubMenus.map((menu) => (
+                  <button
+                    key={menu.id}
+                    onClick={() => setActiveMenu(menu.id as MenuType)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group",
+                      activeMenu === menu.id 
+                        ? "bg-emerald-500/10 text-emerald-400" 
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    )}
+                  >
+                    <menu.icon size={18} className={cn(
+                      activeMenu === menu.id ? "text-emerald-400" : "text-gray-500 group-hover:text-white"
+                    )} />
+                    <span className="text-sm font-medium">{menu.label}</span>
+                    {activeMenu === menu.id && (
+                      <motion.div 
+                        layoutId="active-pill-org"
                         className="ml-auto w-1 h-1 rounded-full bg-emerald-400"
                       />
                     )}
@@ -2569,6 +2631,619 @@ const TrainingPlanDetail = ({ onBack }: { onBack: () => void }) => {
 };
 
 // --- Main App ---
+// --- User Management Components ---
+
+interface OrgNode {
+  id: string;
+  name: string;
+  type: 'group' | 'factory' | 'dept' | 'team';
+  children?: OrgNode[];
+}
+
+const ORG_DATA: OrgNode[] = [
+  {
+    id: 'g1',
+    name: '倍耐力',
+    type: 'group',
+    children: [
+      { id: 'ceo', name: '总裁办', type: 'dept' },
+      { id: 'func', name: '集团职能中心', type: 'dept' },
+      {
+        id: 'f1',
+        name: '神州',
+        type: 'factory',
+        children: [
+          { id: 'd1', name: 'A-生产部', type: 'dept' },
+          { id: 'd2', name: 'A-质检部', type: 'dept' },
+          { id: 't1', name: 'A-一班组', type: 'team' },
+        ]
+      },
+      {
+        id: 'f2',
+        name: '兖州',
+        type: 'factory',
+        children: [
+          { id: 'd3', name: 'B-生产部', type: 'dept' },
+          { id: 'd4', name: 'B-仓储部', type: 'dept' },
+        ]
+      },
+      { id: 'f3', name: '焦作', type: 'factory' }
+    ]
+  }
+];
+
+interface UserAuth {
+  subsystem: string;
+  role: string;
+  scope: 'all' | 'factory' | 'custom';
+  customFactories?: string[];
+  enabled: boolean;
+}
+
+interface User {
+  id: string;
+  name: string;
+  account: string;
+  dept: string;
+  auths: UserAuth[];
+}
+
+const MOCK_USERS: (User & { status: 'active' | 'inactive', roleName: string })[] = [
+  {
+    id: 'u1',
+    name: '王建国',
+    account: 'U-2024001',
+    dept: 'A-生产部',
+    roleName: '生产管理员',
+    status: 'active',
+    auths: [
+      { subsystem: '生产管理', role: '生产管理员', scope: 'factory', enabled: true },
+      { subsystem: '质量管理', role: '质量查看者', scope: 'all', enabled: true },
+    ]
+  },
+  {
+    id: 'u2',
+    name: '李明',
+    account: 'U-2024002',
+    dept: 'A-生产部',
+    roleName: '班组长',
+    status: 'active',
+    auths: [
+      { subsystem: '生产管理', role: '班组长', scope: 'factory', enabled: true },
+      { subsystem: '培训考试', role: '讲师', scope: 'factory', enabled: true },
+    ]
+  },
+  {
+    id: 'u3',
+    name: '陈晓红',
+    account: 'U-2024003',
+    dept: 'A-生产部',
+    roleName: '普通员工',
+    status: 'active',
+    auths: [
+      { subsystem: '生产管理', role: '普通员工', scope: 'custom', enabled: true },
+    ]
+  },
+  {
+    id: 'u4',
+    name: '赵磊',
+    account: 'U-2024004',
+    dept: 'A-生产部',
+    roleName: '普通员工',
+    status: 'inactive',
+    auths: [
+      { subsystem: '生产管理', role: '普通员工', scope: 'custom', enabled: true },
+    ]
+  },
+  {
+    id: 'u5',
+    name: '刘洋',
+    account: 'U-2024005',
+    dept: 'A-生产部',
+    roleName: '生产管理员',
+    status: 'active',
+    auths: [
+      { subsystem: '生产管理', role: '生产管理员', scope: 'factory', enabled: true },
+      { subsystem: '仓储物流', role: '管理员', scope: 'factory', enabled: true },
+    ]
+  }
+];
+
+const SUBSYSTEMS = ['生产管理', '质量管理', '培训考试', '仓储物流', '设备管理'];
+const ROLES = ['生产管理员', '班组长', '普通员工', '质量查看者', '讲师', '管理员'];
+const SCOPES = [
+  { value: 'all', label: '全集团' },
+  { value: 'factory', label: '所属工厂' },
+  { value: 'custom', label: '自定义工厂' },
+];
+
+const OrgTree = ({ onSelect, selectedId }: { onSelect: (node: OrgNode) => void, selectedId?: string }) => {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(['g1', 'f1']));
+
+  const toggleExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = new Set(expanded);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpanded(next);
+  };
+
+  const renderNode = (node: OrgNode, level: number = 0) => {
+    const isExpanded = expanded.has(node.id);
+    const hasChildren = node.children && node.children.length > 0;
+    const isSelected = selectedId === node.id;
+
+    const getIcon = () => {
+      switch (node.type) {
+        case 'group': return (
+          <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center">
+            <Home className="w-3.5 h-3.5 text-blue-500" />
+          </div>
+        );
+        case 'factory': return (
+          <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center">
+            <Factory className="w-3.5 h-3.5 text-emerald-500" />
+          </div>
+        );
+        case 'dept': return (
+          <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-amber-500" />
+          </div>
+        );
+        case 'team': return (
+          <div className="w-6 h-6 rounded bg-pink-50 flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-pink-500" />
+          </div>
+        );
+      }
+    };
+
+    return (
+      <div key={node.id} className="select-none">
+        <div 
+          className={cn(
+            "flex items-center py-2 px-3 rounded-lg cursor-pointer transition-all group relative",
+            isSelected ? "bg-[#e6f7ff] text-[#1890ff]" : "text-gray-600 hover:bg-gray-50"
+          )}
+          onClick={() => onSelect(node)}
+        >
+          <div className="w-4 flex items-center justify-center mr-1">
+            {hasChildren && (
+              <button onClick={(e) => toggleExpand(node.id, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors">
+                {isExpanded ? <ChevronDown className="w-3 h-3 text-gray-400" /> : <ChevronRight className="w-3 h-3 text-gray-400" />}
+              </button>
+            )}
+          </div>
+          <div className="mr-2.5">{getIcon()}</div>
+          <span className={cn("flex-1 truncate text-sm", isSelected ? "font-bold" : "font-medium")}>{node.name}</span>
+          <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full ml-2">
+            {Math.floor(Math.random() * 100) + 5}
+          </span>
+        </div>
+        
+        {hasChildren && isExpanded && (
+          <div className="ml-5 border-l border-gray-100 pl-1 mt-0.5">
+            {node.children!.map(child => renderNode(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-2 space-y-0.5 overflow-y-auto max-h-[calc(100vh-180px)] custom-scrollbar">
+      {ORG_DATA.map(node => renderNode(node))}
+    </div>
+  );
+};
+
+const AuthDrawer = ({ 
+  user, 
+  isOpen, 
+  onClose, 
+  onSave 
+}: { 
+  user: User | null; 
+  isOpen: boolean; 
+  onClose: () => void;
+  onSave: (updatedUser: User) => void;
+}) => {
+  const [auths, setAuths] = useState<UserAuth[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      const initialAuths = SUBSYSTEMS.map(sys => {
+        const existing = user.auths.find(a => a.subsystem === sys);
+        return existing || { subsystem: sys, role: ROLES[0], scope: 'factory' as const, enabled: false };
+      });
+      setAuths(initialAuths);
+    }
+  }, [user]);
+
+  if (!user) return null;
+
+  const stats = {
+    enabledCount: auths.filter(a => a.enabled).length,
+    factoryCount: 3, // Mock
+    roleCount: auths.filter(a => a.enabled).length,
+  };
+
+  const updateAuth = (index: number, updates: Partial<UserAuth>) => {
+    const next = [...auths];
+    next[index] = { ...next[index], ...updates };
+    setAuths(next);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[100]"
+          />
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed right-0 top-0 bottom-0 w-[560px] bg-white shadow-2xl z-[101] flex flex-col"
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">子系统授权配置 · {user.name}</h2>
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 custom-scrollbar">
+              {/* User Info Card */}
+              <div className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4 shadow-sm">
+                <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                  {user.name[0]}
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-gray-900">{user.name}</div>
+                  <div className="text-sm text-gray-400 mt-0.5 flex items-center gap-2">
+                    归属：{user.dept} | ID: {user.account}
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold">在职</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-50/30 p-4 rounded-2xl border border-blue-100">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">已授权子系统</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-blue-600">{stats.enabledCount}</span>
+                    <span className="text-xs text-gray-400">共 5 个</span>
+                  </div>
+                </div>
+                <div className="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">可见工厂</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-emerald-600">{stats.factoryCount}</span>
+                    <span className="text-[10px] text-gray-400 truncate">工厂A, 工厂B...</span>
+                  </div>
+                </div>
+                <div className="bg-amber-50/30 p-4 rounded-2xl border border-amber-100">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">角色数量</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-amber-600">{stats.roleCount}</span>
+                    <span className="text-xs text-gray-400">跨子系统</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                  子系统权限矩阵
+                  <div className="h-px flex-1 bg-gray-100" />
+                </h3>
+
+                {auths.map((auth, idx) => (
+                  <div key={auth.subsystem} className={cn(
+                    "bg-white rounded-2xl border transition-all duration-300 p-5",
+                    auth.enabled ? "border-blue-200 shadow-sm ring-1 ring-blue-100/50" : "border-gray-100 opacity-60"
+                  )}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center",
+                          auth.enabled ? "bg-blue-50 text-blue-500" : "bg-gray-50 text-gray-300"
+                        )}>
+                          {auth.subsystem === '质量管理' ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                        </div>
+                        <span className="font-bold text-gray-800">{auth.subsystem}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">{auth.enabled ? '已启用' : '未启用'}</span>
+                        <button 
+                          onClick={() => updateAuth(idx, { enabled: !auth.enabled })}
+                          className={cn(
+                            "w-11 h-6 rounded-full relative transition-colors duration-300",
+                            auth.enabled ? "bg-blue-600" : "bg-gray-200"
+                          )}
+                        >
+                          <motion.div 
+                            animate={{ x: auth.enabled ? 22 : 2 }}
+                            className="absolute top-1 left-0 w-4 h-4 bg-white rounded-full shadow-sm"
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {auth.enabled && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-4 pt-4 border-t border-gray-50"
+                      >
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500">角色</label>
+                            <select 
+                              value={auth.role}
+                              onChange={(e) => updateAuth(idx, { role: e.target.value })}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+                            >
+                              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500">数据范围</label>
+                            <select 
+                              value={auth.scope}
+                              onChange={(e) => updateAuth(idx, { scope: e.target.value as any })}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+                            >
+                              {SCOPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            </select>
+                          </div>
+                        </div>
+
+                        {auth.scope === 'custom' && (
+                          <div className="flex flex-wrap gap-3 pt-2">
+                            {['工厂A', '工厂B', '工厂C'].map(f => (
+                              <label key={f} className="flex items-center gap-2 cursor-pointer group">
+                                <div className={cn(
+                                  "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                                  auth.customFactories?.includes(f) ? "bg-blue-600 border-blue-600" : "border-gray-300 group-hover:border-blue-400"
+                                )} onClick={() => {
+                                  const current = auth.customFactories || [];
+                                  const next = current.includes(f) 
+                                    ? current.filter(x => x !== f)
+                                    : [...current, f];
+                                  updateAuth(idx, { customFactories: next });
+                                }}>
+                                  {auth.customFactories?.includes(f) && <Check className="w-3 h-3 text-white" />}
+                                </div>
+                                <span className="text-xs text-gray-600">{f}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-100 flex gap-3 bg-white">
+              <button 
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-sm font-bold"
+              >
+                取消
+              </button>
+              <button 
+                onClick={() => {
+                  onSave({ ...user, auths: auths.filter(a => a.enabled) });
+                  onClose();
+                }}
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-bold shadow-lg shadow-blue-600/20"
+              >
+                保存配置
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const UserManagement = () => {
+  const [selectedNode, setSelectedNode] = useState<OrgNode | null>(ORG_DATA[0]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const filteredUsers = MOCK_USERS.filter(u => 
+    u.name.includes(searchQuery) || u.account.includes(searchQuery)
+  );
+
+  return (
+    <div className="flex-1 flex h-full bg-gray-50 overflow-hidden">
+      {/* Left Sidebar: Org Tree */}
+      <div className="w-72 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-base font-bold text-gray-800">组织架构</h2>
+          <button className="text-blue-600 hover:text-blue-700 flex items-center gap-1 text-sm font-medium">
+            <Plus className="w-4 h-4" /> 新增
+          </button>
+        </div>
+        <OrgTree onSelect={setSelectedNode} selectedId={selectedNode?.id} />
+      </div>
+
+      {/* Main Content: User List */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white ml-4 my-4 mr-4 rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Header Section */}
+        <div className="p-6 border-b border-gray-50">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <Factory className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-bold text-gray-900">{selectedNode?.name || '所有人员'}</h1>
+                  <span className="text-[10px] text-gray-400 font-medium">集团总部 / 工厂 A / A-生产部</span>
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">共 {filteredUsers.length} 位成员</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2">
+                <Plus className="w-4 h-4" /> 新增成员
+              </button>
+              <button className="px-4 py-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                <Download className="w-4 h-4 rotate-180" /> 导入
+              </button>
+              <button className="px-4 py-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                <Download className="w-4 h-4" /> 导出
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-400">状态</span>
+              <div className="flex p-1 bg-gray-100 rounded-xl">
+                {['全部', '在职', '离职'].map(s => (
+                  <button key={s} className={cn(
+                    "px-3 py-1 text-[10px] font-bold rounded-lg transition-all",
+                    s === '全部' ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                  )}>{s}</button>
+                ))}
+              </div>
+            </div>
+            <div className="h-4 w-px bg-gray-200" />
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-400">角色</span>
+              <select className="bg-gray-100 border-none rounded-xl px-3 py-1.5 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-blue-500/20">
+                <option>全部岗位角色</option>
+                {ROLES.map(r => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-400">子系统权限</span>
+              <select className="bg-gray-100 border-none rounded-xl px-3 py-1.5 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-blue-500/20">
+                <option>全部子系统</option>
+                {SUBSYSTEMS.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Table Section */}
+        <div className="flex-1 overflow-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-white z-10">
+              <tr className="border-b border-gray-50">
+                <th className="p-4 w-10"><input type="checkbox" className="rounded border-gray-300" /></th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">姓名</th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">归属部门</th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">岗位角色</th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">子系统权限</th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">数据范围</th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">状态</th>
+                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map(user => (
+                <tr key={user.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors group">
+                  <td className="p-4"><input type="checkbox" className="rounded border-gray-300" /></td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm",
+                        user.id === 'u1' ? "bg-blue-600" : user.id === 'u2' ? "bg-emerald-600" : "bg-purple-600"
+                      )}>
+                        {user.name[0]}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">{user.name}</div>
+                        <div className="text-[10px] text-gray-400 font-mono">{user.account}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className="px-2 py-1 rounded-lg bg-gray-100 text-gray-600 text-[10px] font-bold border border-gray-200">
+                      {user.dept}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className={cn(
+                      "px-2 py-1 rounded-lg text-[10px] font-bold",
+                      user.roleName === '生产管理员' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                    )}>
+                      {user.roleName}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {user.auths.map(auth => (
+                        <span key={auth.subsystem} className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold">
+                          {auth.subsystem}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="p-4 text-xs text-gray-500 font-medium">
+                    {user.auths[0]?.scope === 'all' ? '全集团' : user.auths[0]?.scope === 'factory' ? '工厂A' : '仅本人'}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-1.5">
+                      <div className={cn("w-1.5 h-1.5 rounded-full", user.status === 'active' ? "bg-emerald-500" : "bg-gray-300")} />
+                      <span className={cn("text-xs font-bold", user.status === 'active' ? "text-gray-700" : "text-gray-400")}>
+                        {user.status === 'active' ? '在职' : '离职'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors text-xs font-bold">编辑</button>
+                      <button 
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setIsAuthDrawerOpen(true);
+                        }}
+                        className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-lg transition-colors text-xs font-bold"
+                      >
+                        授权
+                      </button>
+                      <button className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors text-xs font-bold">删除</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <AuthDrawer 
+        user={selectedUser}
+        isOpen={isAuthDrawerOpen}
+        onClose={() => setIsAuthDrawerOpen(false)}
+        onSave={(updated) => {
+          console.log('Saving user auth:', updated);
+        }}
+      />
+    </div>
+  );
+};
+
 export default function App() {
   const [activeMenu, setActiveMenu] = useState<MenuType>('equipment');
 
@@ -2594,6 +3269,7 @@ export default function App() {
           {activeMenu === 'task-detail' && <TrainingPlanDetail onBack={() => setActiveMenu('task')} />}
           {activeMenu === 'calendar' && <TrainingCalendar />}
           {activeMenu === 'personal-tasks' && <PersonalWorkbench />}
+          {activeMenu === 'user-management' && <UserManagement />}
           {activeMenu === 'portal' && <PortalDashboard onSelectSOP={() => setActiveMenu('sop')} />}
         </motion.div>
       </AnimatePresence>
